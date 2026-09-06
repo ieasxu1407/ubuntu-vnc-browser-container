@@ -11,18 +11,19 @@ if [ -z "${VNC_PASSWORD:-}" ]; then
 fi
 
 # VNC 비밀번호 파일 생성
-mkdir -p /root/.vnc
-x11vnc -storepasswd "$VNC_PASSWORD" /root/.vnc/passwd
-chmod 600 /root/.vnc/passwd
+VNC_PASSFILE="/tmp/.vnc-passwd"
+
+x11vnc -storepasswd "$VNC_PASSWORD" "$VNC_PASSFILE"
+chmod 600 "$VNC_PASSFILE"
 
 # 기존 x11vnc 설정 제거
 rm -f /app/conf.d/x11vnc.conf
 rm -f /app/conf.d/x11vnc-password.conf
 
 # 비밀번호를 사용하는 x11vnc 설정 생성
-cat > /app/conf.d/x11vnc.conf <<'EOF'
+cat > /app/conf.d/x11vnc.conf <<EOF
 [program:x11vnc]
-command=x11vnc -forever -shared -rfbauth /root/.vnc/passwd
+command=x11vnc -forever -shared -rfbauth $VNC_PASSFILE
 autorestart=true
 EOF
 
