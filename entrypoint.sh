@@ -1,25 +1,30 @@
 #!/bin/bash
-set -ex
+set -e
 
 RUN_FLUXBOX=${RUN_FLUXBOX:-yes}
 RUN_XTERM=${RUN_XTERM:-yes}
 
-# VNC 비밀번호 설정
-if [ -n "${VNC_PASSWORD:-}" ]; then
-    mkdir -p /root/.vnc
+# VNC_PASSWORD가 반드시 있어야 함
+if [ -z "${VNC_PASSWORD:-}" ]; then
+    echo "ERROR: VNC_PASSWORD is not set!"
+    exit 1
+fi
 
-    x11vnc -storepasswd "$VNC_PASSWORD" /root/.vnc/passwd
+# VNC 비밀번호 파일 생성
+mkdir -p /root/.vnc
+x11vnc -storepasswd "$VNC_PASSWORD" /root/.vnc/passwd
+chmod 600 /root/.vnc/passwd
 
-    chmod 600 /root/.vnc/passwd
+# 기존 x11vnc 설정 제거
+rm -f /app/conf.d/x11vnc.conf
+rm -f /app/conf.d/x11vnc-password.conf
 
-    rm -f /app/conf.d/x11vnc.conf
-
-    cat > /app/conf.d/x11vnc-password.conf <<'EOF'
+# 비밀번호를 사용하는 x11vnc 설정 생성
+cat > /app/conf.d/x11vnc.conf <<'EOF'
 [program:x11vnc]
 command=x11vnc -forever -shared -rfbauth /root/.vnc/passwd
 autorestart=true
 EOF
-fi
 
 case $RUN_FLUXBOX in
     false|no|n|0)
